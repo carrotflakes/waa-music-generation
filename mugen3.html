@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+</head>
+<body>
+  <button onclick="play()"> play</button>
+<script>
+const AudioContext = window.AudioContext;
+const ac = new AudioContext();
+
+const masterGain = ac.createGain();
+masterGain.gain.value = 0.1;
+masterGain.connect(ac.destination);
+
+const barLength = 2; // 一小節当たりの秒数
+
+function play() {
+		let timeNext = ac.currentTime + 0.01;
+		let i = 0;
+
+		function* nextBar() {
+				while (1) {
+						chord(timeNext, [60, 65, 67, 60][i], 'major', barLength);
+						i = (i+1)%4;
+						yield;
+				}
+		}
+
+		const barGen = nextBar();
+		setInterval(() => {
+				if (timeNext - barLength < ac.currentTime) {
+						barGen.next();
+						timeNext += barLength;
+				}
+		}, 500);
+}
+
+function note1(time, nn, dur) {
+		const freq = 440 * Math.pow(2, (nn - 69) / 12);
+		const gain = ac.createGain();
+		gain.gain.value = 1;
+		const osc = ac.createOscillator();
+		osc.type="square";
+		osc.frequency.setValueAtTime(freq, time);
+		osc.connect(gain);
+		gain.connect(masterGain);
+		osc.start(time);
+		osc.stop(time + dur);
+}
+
+function chord(time, root, type, dur) {
+		const ds = {
+				'major': [0, 4, 7],
+				'minor': [0, 3, 7],
+		}[type];
+
+		for (const d of ds)
+				note1(time, root + d, dur);
+}
+
+</script>
+</body>
+</html>

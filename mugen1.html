@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+</head>
+<body>
+	<button onclick="play()"> play</button>
+<script>
+const AudioContext = window.AudioContext;
+const ac = new AudioContext();
+
+const masterGain = ac.createGain();
+masterGain.gain.value = 0.1;
+masterGain.connect(ac.destination);
+
+function play() {
+   const timeNow = ac.currentTime;
+   const gain = ac.createGain();
+   gain.gain.value = 1;
+   const osc = ac.createOscillator();
+   osc.type="square";
+   osc.connect(gain);
+   gain.connect(masterGain);
+   osc.start(timeNow);
+   osc.stop(timeNow + 0.1);
+}
+</script>
+</body>
+</html>
