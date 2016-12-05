@@ -16,130 +16,130 @@ const barLength = 2; // 一小節当たりの秒数
 const beatLength = barLength / 4; // 一拍当たりの秒数
 
 function play() {
-		const barGen = nextBar(ac.currentTime + 0.5);
-		let time = barGen.next().value;
+	const barGen = nextBar(ac.currentTime + 0.5);
+	let time = barGen.next().value;
 
-		setInterval(() => {
-				if (time - barLength < ac.currentTime) {
-						time = barGen.next().value;
-				}
-		}, 500);
+	setInterval(() => {
+		if (time - barLength < ac.currentTime) {
+			time = barGen.next().value;
+		}
+	}, 500);
 }
 
 function* nextBar(time) {
-		const chordGen = nextChord();
+	const chordGen = nextChord();
 
-		while (1) {
-				const {root, type} = chordGen.next().value;
+	while (1) {
+		const {root, type} = chordGen.next().value;
 
-				// メロディ
-				for (let j = 0; j < 4; ++j)
-						note2(time + beatLength * j,
-									randGet(chordNotes(root, type)) + 12,
-									//clip(randGet(chordNotes(root, type)) + 12, 72, 84),
-									beatLength);
+		// メロディ
+		for (let j = 0; j < 4; ++j)
+			note2(time + beatLength * j,
+				randGet(chordNotes(root, type)) + 12,
+				//clip(randGet(chordNotes(root, type)) + 12, 72, 84),
+				beatLength);
 
-				// コード
-				chord(time, root, type, barLength);
+		// コード
+		chord(time, root, type, barLength);
 
-				// ドラム
-				for (let i = 0; i < 4; ++i)
-						bassDrum(time + beatLength * i);
+		// ドラム
+		for (let i = 0; i < 4; ++i)
+			bassDrum(time + beatLength * i);
 
-				time += barLength;
-				yield time;
-		}
+		time += barLength;
+		yield time;
+	}
 }
 
 function* nextChord() {
-		const rootTable = {
-				C: 60, D: 62, E: 64, F: 65, G: 67, A: 69, B: 71
+	const rootTable = {
+		C: 60, D: 62, E: 64, F: 65, G: 67, A: 69, B: 71
+	};
+	const chordProgs = [
+		'Cmajor Eminor7 Fmajor G7',
+		'Fmajor G7 Eminor7 Aminor',
+		'Aminor Fmajor Gmajor Cmajor',
+		'Fmajor Eminor7 Dminor7 Cmajor',
+		'Cmajor Gmajor Aminor Eminor Fmajor Eminor Fmajor Gmajor',
+	].map(x => x.split(' ').map(y => {
+		return {
+			root: rootTable[y[0]],
+			type: y.substr(1)
 		};
-		const chordProgs = [
-				'Cmajor Eminor7 Fmajor G7',
-				'Fmajor G7 Eminor7 Aminor',
-				'Aminor Fmajor Gmajor Cmajor',
-				'Fmajor Eminor7 Dminor7 Cmajor',
-				'Cmajor Gmajor Aminor Eminor Fmajor Eminor Fmajor Gmajor',
-		].map(x => x.split(' ').map(y => {
-				return {
-						root: rootTable[y[0]],
-						type: y.substr(1)
-				};
-		}));
+	}));
 
-		while (1)
-				yield* randGet(chordProgs);
+	while (1)
+		yield* randGet(chordProgs);
 }
 
 
 function note1(time, nn, dur) {
-		const freq = 440 * Math.pow(2, (nn - 69) / 12);
-		const gain = ac.createGain();
-		gain.gain.value = 0.5;
-		const osc = ac.createOscillator();
-		osc.type="square";
-		osc.frequency.setValueAtTime(freq, time);
-		osc.connect(gain);
-		gain.connect(masterGain);
-		osc.start(time);
-		osc.stop(time + dur);
+	const freq = 440 * Math.pow(2, (nn - 69) / 12);
+	const gain = ac.createGain();
+	gain.gain.value = 0.5;
+	const osc = ac.createOscillator();
+	osc.type="square";
+	osc.frequency.setValueAtTime(freq, time);
+	osc.connect(gain);
+	gain.connect(masterGain);
+	osc.start(time);
+	osc.stop(time + dur);
 }
 
 function note2(time, nn, dur) {
-		const freq = 440 * Math.pow(2, (nn - 69) / 12);
-		const gain = ac.createGain();
-		gain.gain.value = 1;
-		const osc = ac.createOscillator();
-		osc.type="sawtooth";
-		osc.frequency.setValueAtTime(freq, time);
-		osc.connect(gain);
-		gain.connect(masterGain);
-		osc.start(time);
-		osc.stop(time + dur);
+	const freq = 440 * Math.pow(2, (nn - 69) / 12);
+	const gain = ac.createGain();
+	gain.gain.value = 1;
+	const osc = ac.createOscillator();
+	osc.type="sawtooth";
+	osc.frequency.setValueAtTime(freq, time);
+	osc.connect(gain);
+	gain.connect(masterGain);
+	osc.start(time);
+	osc.stop(time + dur);
 }
 
 function chordNotes(root, type) {
-		const ds = {
-				'major':   [0, 4, 7],
-				'minor':   [0, 3, 7],
-				'7':       [0, 4, 7, 10],
-				'minor7':  [0, 3, 7, 10],
-		}[type];
-		return ds.map((x) => x + root);
+	const ds = {
+		'major':   [0, 4, 7],
+		'minor':   [0, 3, 7],
+		'7':       [0, 4, 7, 10],
+		'minor7':  [0, 3, 7, 10],
+	}[type];
+	return ds.map((x) => x + root);
 }
 
 function chord(time, root, type, dur) {
-		for (const nn of chordNotes(root, type))
-				note1(time, nn, dur);
+	for (const nn of chordNotes(root, type))
+		note1(time, nn, dur);
 }
 
 function bassDrum(time) {
-		const dur = 0.2;
-		const gain = ac.createGain();
-		gain.gain.setValueAtTime(2, time);
-		gain.gain.setValueAtTime(2, time + dur * 0.5);
-		gain.gain.exponentialRampToValueAtTime(0.1, time + dur);
-		const osc = ac.createOscillator();
-		osc.type="triangle";
-		osc.frequency.setValueAtTime(300, time);
-		osc.frequency.exponentialRampToValueAtTime(20, time + dur);
-		osc.connect(gain);
-		gain.connect(masterGain);
-		osc.start(time);
-		osc.stop(time + dur);
+	const dur = 0.2;
+	const gain = ac.createGain();
+	gain.gain.setValueAtTime(2, time);
+	gain.gain.setValueAtTime(2, time + dur * 0.5);
+	gain.gain.exponentialRampToValueAtTime(0.1, time + dur);
+	const osc = ac.createOscillator();
+	osc.type="triangle";
+	osc.frequency.setValueAtTime(300, time);
+	osc.frequency.exponentialRampToValueAtTime(20, time + dur);
+	osc.connect(gain);
+	gain.connect(masterGain);
+	osc.start(time);
+	osc.stop(time + dur);
 }
 
 function randGet(arr) {
-		return arr[Math.random() * arr.length | 0];
+	return arr[Math.random() * arr.length | 0];
 }
 
 function clip(nn, lower, upper) {
-		while (nn < lower)
-				nn += 12;
-		while (upper < nn)
-				nn -= 12;
-		return nn;
+	while (nn < lower)
+		nn += 12;
+	while (upper < nn)
+		nn -= 12;
+	return nn;
 }
 
 </script>
